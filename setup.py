@@ -110,6 +110,7 @@ logo_list = [
     'src/templates/logoCloudAreapd.png',
     'src/templates/logoInfnAAI.png',
     'src/templates/logoGoogle.png',
+    'src/templates/logoLinkedin.png',
     'src/templates/logoUsrPwd.png',
     'src/templates/logoIDEM.png',
     'src/templates/logoCloudAreapd.ico'
