@@ -28,8 +28,8 @@ def get_manager(request):
     if 'REMOTE_USER' in request.META and request.META.get('AUTH_TYPE','') == 'shibboleth':
         return SAML2_IdP(request)
     
-    if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-google'):
-        return Google_IdP(request)
+    if 'REMOTE_USER' in request.META and 'HTTP_OIDC_CLAIM_ISS' in request.META:
+        return OpenIDC_IdP(request)
         
     return None
 
@@ -66,11 +66,11 @@ class SAML2_IdP:
 
 
 
-class Google_IdP:
+class OpenIDC_IdP:
 
     def __init__(self, request):
     
-        self.root_url = '/dashboard-google'
+        self.root_url = '/' + request.path.split('/')[1]
         self.logout_prefix = ''
         self.email = request.META.get('HTTP_OIDC_CLAIM_EMAIL', None)
         if self.email:
