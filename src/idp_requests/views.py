@@ -19,40 +19,65 @@ from django import shortcuts
 from django.db import IntegrityError
 from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, reverse_lazy
 
 from horizon import exceptions
 from horizon import forms
+from horizon import tables
 
 from openstack_auth_shib.idpmanager import get_manager, get_idp_list
 from openstack_auth_shib.models import Registration, UserMapping
 
+from .tables import IdPTable
+from .forms import IdpManageForm
+
 LOG = logging.getLogger(__name__)
 
-def manage(request):
-
-    myproviders = set()
-    
-    allmaps = UserMapping.objects.filter(registration__userid=request.user.id)
-    for umap in allmaps:
+#
+# TODO temporary using globalname to get the idp id
+#
+class ProviderMapping():
+    def __init__(self, umap):
+        self.username = umap.globaluser
         idx = umap.globaluser.find('@')
         if idx > 0:
-            myproviders.add(umap.globaluser[idx+1:])
+            self.idpid = umap.globaluser[idx+1:]
+        else:
+            self.idpid = 'unknown'
 
-    ctx = dict()
+class IndexView(tables.DataTableView):
+    table_class = IdPTable
+    template_name = 'project/idp_requests/index.html'
 
-    attributes = get_manager(request)
-    if attributes:
-        ctx['currpath'] = '%s/project/idp_requests/suspend/' % attributes.root_url
-    else:
-        ctx['currpath'] = '/dashboard/project/idp_requests/suspend/'
+    def get_data(self):
     
-    ctx['idp_data_list'] = get_idp_list(myproviders)
-    ctx['providers'] = myproviders
+        allmaps = UserMapping.objects.filter(registration__userid=self.request.user.id)
+        return [ ProviderMapping(umap) for umap in allmaps ]
+
+class ManageView(forms.ModalFormView):
+    form_class = IdpManageForm
+    template_name = 'project/idp_requests/idp_request.html'
+    success_url = reverse_lazy('horizon:project:idp_requests:index')
+
+    def get_context_data(self, **kwargs):
+        myproviders = set()
+        context = super(ManageView, self).get_context_data(**kwargs)
+        allmaps = UserMapping.objects.filter(registration__userid=self.request.user.id)
+        for umap in allmaps:
+            idx = umap.globaluser.find('@')
+            if idx > 0:
+                myproviders.add(umap.globaluser[idx+1:])
+
+        attributes = get_manager(self.request)
+        if attributes:
+            context['currpath'] = '%s/project/idp_requests/suspend/' % attributes.root_url
+        else:
+            context['currpath'] = '/dashboard/project/idp_requests/suspend/'
     
-    return shortcuts.render(request, 'project/idp_requests/idp_request.html', ctx)
-    
-    
+        context['idp_data_list'] = get_idp_list(myproviders)
+        return context
+
+
 
 def suspend(request):
     

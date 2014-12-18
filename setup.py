@@ -102,6 +102,7 @@ preq_templ_list = [
 ]
 
 idpreq_templ_list = [
+    'src/templates/idp_requests/index.html',
     'src/templates/idp_requests/idp_request.html',
     'src/templates/idp_requests/_idp_request.html'
 ]

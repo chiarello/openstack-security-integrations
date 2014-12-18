@@ -21,7 +21,8 @@ from openstack_dashboard.dashboards.project.idp_requests import views
 prefix = 'openstack_dashboard.dashboards.project.idp_requests.views'
 
 urlpatterns = patterns(prefix,
-    url(r'^$', 'manage', name='index'),
+    url(r'^$', views.IndexView.as_view(), name='index'),
+    url(r'^manage/$', views.ManageView.as_view(), name='manage'),
     url(r'^suspend/$', 'suspend', name='suspend'),
     url(r'^resume/$', 'resume', name='resume'))
 

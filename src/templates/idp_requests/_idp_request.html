@@ -48,17 +48,6 @@
     <p>{% trans "No providers available" %}</p>
     {% endif %}
     
-    {% if providers %}
-    <hr/>
-    
-    <h3>{% trans "Used Identity Providers" %}</h3>
-    <ul>
-        {% for prov_id in providers %}
-        <li>{{ prov_id }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-
 {% endblock %}
 
 
