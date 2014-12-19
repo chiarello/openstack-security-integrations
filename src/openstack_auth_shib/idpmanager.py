@@ -40,8 +40,8 @@ class SAML2_IdP:
     def __init__(self, request):
     
         self.root_url = '/' + request.path.split('/')[1]
-        self.logout_prefix = '/Shibboleth.sso/Logout?return=https://%s:%s' % \
-            (request.META['SERVER_NAME'], request.META['SERVER_PORT'])
+        self.hostname = request.META['SERVER_NAME']
+        self.portnum = request.META['SERVER_PORT']
             
         # the remote user corresponds to the ePPN
         self.username = request.META['REMOTE_USER']
@@ -54,12 +54,13 @@ class SAML2_IdP:
         
     def get_logout_url(self, *args):
         
-        result = self.logout_prefix
         if len(args):
-            result += args[0]
+            tmpsuff = args[0]
         else:
-            result += '/dashboard'
-        return result        
+            tmpsuff = '/dashboard'
+        
+        tmps = "https://%s:%s%s" % (self.hostname, self.portnum, tmpsuff)
+        return '/Shibboleth.sso/Logout?' + urllib.urlencode({'return' : tmps})
     
     def postproc_logout(self, response):
         return response
@@ -71,7 +72,6 @@ class OpenIDC_IdP:
     def __init__(self, request):
     
         self.root_url = '/' + request.path.split('/')[1]
-        self.logout_prefix = ''
         self.email = request.META.get('HTTP_OIDC_CLAIM_EMAIL', None)
         if self.email:
             self.username = self.email
