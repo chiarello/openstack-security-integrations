@@ -72,6 +72,8 @@ class OpenIDC_IdP:
     def __init__(self, request):
     
         self.root_url = '/' + request.path.split('/')[1]
+        self.hostname = request.META['SERVER_NAME']
+        self.portnum = request.META['SERVER_PORT']
         self.email = request.META.get('HTTP_OIDC_CLAIM_EMAIL', None)
         if self.email:
             self.username = self.email
@@ -85,14 +87,14 @@ class OpenIDC_IdP:
     def get_logout_url(self, *args):
         
         if len(args):
-            return args[0]
-        return '/dashboard'
+            tmpsuff = args[0]
+        else:
+            tmpsuff = '/dashboard'
+        
+        tmps = "https://%s:%s%s" % (self.hostname, self.portnum, tmpsuff)
+        return self.root_url + '?' + urllib.urlencode({'logout' : tmps})
     
     def postproc_logout(self, response):
-        #
-        # TODO verify logout
-        #
-        response.delete_cookie('mod_auth_openidc_session')
         return response
 
 
