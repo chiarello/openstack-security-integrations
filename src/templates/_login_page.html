@@ -77,15 +77,14 @@
         <img align="middle" height="80px" width="80px" alt="Local login" 
              src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
       </button>
-      <button type="button" onclick="location.href='/dashboard-shib/auth/login/';">
-        <img align="middle" height="80px" width="80px" alt="Login Infn AAI" 
-             src="/dashboard/static/dashboard/img/logoInfnAAI.png">
-      </button>
       {% if HORIZON_CONFIG.identity_providers %}
       {% for idpdata in HORIZON_CONFIG.identity_providers %}
-      {# For definition of idpdata see openstack_auth_shib.idpmanager #}
         {% if not idpdata.type == 'experimental' or 'INFN-testing' in request.META.HTTP_USER_AGENT %}
-        <button type="button" onclick="location.href='{{ idpdata.path }}';">
+        <button id="{{ idpdata.id }}_btn"
+                {% if idpdata.protocol == 'mapped' %}
+                onclick="submitMapped()"
+                {% endif %}
+                type="button">
            <img align="middle" height="80px" width="80px" 
                 alt="Login {{ idpdata.description }}" 
                 src="{{ idpdata.logo }}"/>
@@ -101,7 +100,10 @@
       {% else %}
          style="display: none;">
       {% endif %}
-      {% include "horizon/common/_form_fields.html" %}
+      {% include 'horizon/common/_form_errors.html' with form=form %}
+      {% for field in form.visible_fields %}
+        {% include 'horizon/common/_form_field.html' with field=field %}
+      {% endfor %}
     </div>
   </fieldset>
 {% endblock %}
@@ -117,6 +119,9 @@
     <button type="button" 
             onclick="location.href='/dashboard/auth/register/'"
             class="btn btn-primary pull-right">{% trans "Register" %}</button>
+    <button type="button" 
+            onclick="location.href='/dashboard-shib/auth/register/'"
+            class="btn btn-primary pull-right">{% trans "SSO Register" %}</button>
     <button type="button" 
             onclick="showIDPs()"
             class="btn btn-primary pull-right">{% trans "Back" %}</button>
@@ -147,6 +152,10 @@
         document.getElementById('idpbtndiv').style.display='none';
         document.getElementById('fieldsdiv').style.display='block';
         document.getElementById('cmdbtndiv').style.display='block';
+    }
+    
+    function submitMapped() {
+        document.forms[0].submit();
     }
   </script>
 {% endblock %}
