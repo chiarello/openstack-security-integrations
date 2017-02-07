@@ -87,10 +87,8 @@ rm -rf %{buildroot}
 Summary: Django plugin for Shibboleth authentication
 Group: System Environment/Libraries
 Requires: python-django-openstack-auth
-Requires: python-crypto
 Requires: python-keystoneclient
 Requires: openstack-dashboard
-Requires: python-lesscpy
 
 %description -n openstack-auth-shib
 Django plugin for Shibboleth authentication
@@ -193,8 +191,8 @@ fi
 %package -n keystone-cloud-veneto-policy
 Summary: Keystone policies for Cloud Veneto
 Group: System Environment/Libraries
-Requires: python-crypto
 Requires: python-keystone
+Obsoletes: keystone-skey-auth
 
 %description -n keystone-cloud-veneto-policy
 Keystone policies for Cloud Veneto

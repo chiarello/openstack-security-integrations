@@ -14,13 +14,10 @@
 #  under the License. 
 
 import logging
-import re
 
 from django import shortcuts
 from django.conf import settings
-from django.core.urlresolvers import reverse_lazy
-from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate
-from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.utils.translation import ugettext as _
 
 from django.contrib.auth.decorators import login_required
@@ -34,93 +31,20 @@ from openstack_auth.views import websso as basic_websso
 from openstack_auth.views import logout as basic_logout
 from openstack_auth.views import switch as basic_switch
 from openstack_auth.views import switch_region as basic_switch_region
-from openstack_auth.user import set_session_from_user
 from openstack_auth.utils import is_websso_enabled
-from openstack_auth import exceptions as auth_exceptions
-
-try:
-    from openstack_auth.views import delete_all_tokens
-    from threading import Thread
-    old_token_mgm = True
-except:
-    from openstack_auth.views import delete_token
-    old_token_mgm = False
-
-from keystoneclient import exceptions as keystone_exceptions
 
 from horizon import forms
 
-from .models import UserMapping
 from .forms import RegistrForm
 from .idpmanager import get_manager
-from .utils import get_user_home, get_ostack_attributes
 
 LOG = logging.getLogger(__name__)
-
-def build_err_response(request, err_msg, attributes):
-    response = shortcuts.redirect(attributes.get_logout_url())
-    if attributes:
-        response = attributes.postproc_logout(response)
-
-    response.set_cookie('logout_reason', err_msg)
-
-    return response
 
 @sensitive_post_parameters()
 @csrf_protect
 @never_cache
 def login(request):
 
-    try:
-    
-        attributes = get_manager(request)
-        domain, auth_url = get_ostack_attributes(request)
-        
-        if attributes:
-        
-            map_entry = UserMapping.objects.get(globaluser=attributes.username)
-            localuser = map_entry.registration.username
-            LOG.debug("Mapped user %s on %s" % (attributes.username, localuser))
-
-            kwargs = {
-                'auth_url' : auth_url,
-                'request' : request,
-                'username' : localuser,
-                'password' : None,
-                'user_domain_name' : domain
-            }
-            user = authenticate(**kwargs)
-
-            auth_login(request, user)
-            if request.user.is_authenticated():
-                set_session_from_user(request, request.user)
-                
-                default_region = (settings.OPENSTACK_KEYSTONE_URL, "Default Region")
-                regions = dict(getattr(settings, 'AVAILABLE_REGIONS', [default_region]))
-                
-                region = request.user.endpoint
-                region_name = regions.get(region)
-                request.session['region_endpoint'] = region
-                request.session['region_name'] = region_name
-                request.session['global_user'] = attributes.username
-            
-            return shortcuts.redirect(get_user_home(user))
-            
-    except (UserMapping.DoesNotExist, keystone_exceptions.NotFound):
-
-        LOG.debug("User %s authenticated but not authorized" % attributes.username)
-        return shortcuts.redirect(reverse_lazy('register'))
-
-    except (keystone_exceptions.Unauthorized, auth_exceptions.KeystoneAuthException):
-
-        return build_err_response(request, _("User not authorized: invalid or disabled"), attributes)
-
-    except Exception as exc:
-
-        LOG.error(exc.message, exc_info=True)
-        err_msg = "A failure occurs authenticating user\nPlease, contact the cloud managers"
-        return build_err_response(request, _(err_msg), attributes)
-        
     return basic_login(request)
 
 
@@ -142,29 +66,6 @@ def websso(request):
 
 def logout(request):
 
-    attributes = get_manager(request)
-    
-    if attributes:
-        
-        msg = 'Logging out user "%(username)s".' % {'username': request.user.username}
-        LOG.info(msg)
-        if old_token_mgm:
-            if 'token_list' in request.session:
-                t = Thread(target=delete_all_tokens,
-                    args=(list(request.session['token_list']),))
-                t.start()
-        else:
-            endpoint = request.session.get('region_endpoint')
-            token = request.session.get('token')
-            if token and endpoint:
-                delete_token(endpoint=endpoint, token_id=token.id)
-
-        # update the session cookies (sessionid and csrftoken)
-        auth_logout(request)
-        
-        response = shortcuts.redirect(attributes.get_logout_url())
-        return attributes.postproc_logout(response)
-        
     return basic_logout(request)
 
 
