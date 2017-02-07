@@ -153,7 +153,6 @@ logo_list = [
 ]
 
 module_list = [
-    'keystone_skey_auth',
     'openstack_auth_shib',
     'registration_manager',
     'project_manager',
@@ -199,7 +198,7 @@ setup(
                   (idpreq_panel_dir, idpreq_templ_list),
                   (img_dir, logo_list),
                   ('etc/openstack-auth-shib', confile_list),
-                  ('etc/keystone-skey-auth', ['config/policy.json']),
+                  ('etc/keystone-cloud-veneto-policy', ['config/policy.json']),
                   ('etc/cron.d', ['config/openstack-auth-shib-cron']),
                   ('usr/share/openstack-auth-shib', ['config/attribute-map.xml']),
                   ('usr/share/openstack-auth-shib/templates', ['config/notifications_en.txt'])
